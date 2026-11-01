@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MMH Extractor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;--ac:#4f46e5;--ac2:#7c3aed;--ok:#16a34a;--bad:#dc2626;--live:#ef4444;--warn:#d97706}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1020;--card:#131a2e;--ink:#e8ecf8;--mut:#8b97b5;--line:#232d4a;--ac:#818cf8;--ac2:#a78bfa;--ok:#4ade80;--bad:#f87171;--live:#f87171;--warn:#fbbf24}}
+*{box-sizing:border-box;margin:0}
+html,body{background:var(--bg);color:var(--ink);font:14px/1.45 Inter,system-ui,sans-serif}
+body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.wrap{max-width:1100px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--ac),var(--ac2));display:grid;place-items:center;color:#fff;font-weight:800}
+h1{font-size:20px;font-weight:800}h1 small{display:block;font-size:12px;font-weight:500;color:var(--mut)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.steps{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.step{flex:1;min-width:90px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);color:var(--mut);font-weight:600;font-size:12px;background:var(--card)}
+.step.on{color:#fff;background:linear-gradient(135deg,var(--ac),var(--ac2));border-color:transparent}
+.step.done{color:var(--ok)}
+label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:10px 0 4px}
+input[type=text],input[type=password],input[type=email]{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+input:focus{outline:2px solid var(--ac);outline-offset:-1px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+button{font:inherit;font-weight:600;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.p{background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;border:0}
+button:disabled{opacity:.5;cursor:default}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px}
+.tab{white-space:nowrap;border-radius:99px;padding:7px 13px;font-size:13px}
+.tab.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.tab.lv{border-color:var(--live);color:var(--live)}.tab.lv.on{background:var(--live);color:#fff}
+.tests{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.t{display:flex;gap:10px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);cursor:pointer;align-items:flex-start}
+.t.sel{border-color:var(--ac);box-shadow:0 0 0 2px color-mix(in srgb,var(--ac) 25%,transparent)}
+.t input{margin-top:3px;width:18px;height:18px;accent-color:var(--ac)}
+.t b{display:block;font-size:13px}.t span{color:var(--mut);font-size:12px}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;margin-right:6px}
+.chip.live{background:color-mix(in srgb,var(--live) 15%,transparent);color:var(--live)}
+.chip.upcoming{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn)}
+.chip.ended{background:var(--line);color:var(--mut)}
+.bar{height:10px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ac),var(--ac2));transition:width .3s}
+#log{font:12px/1.5 ui-monospace,monospace;max-height:200px;overflow:auto;background:var(--bg);border-radius:10px;padding:10px;margin-top:10px;white-space:pre-wrap}
+.ok{color:var(--ok)}.er{color:var(--bad)}.mut{color:var(--mut)}
+.hide{display:none}
+details summary{cursor:pointer;font-weight:600;color:var(--mut)}
+.f{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+</style></head><body><div class="wrap">
+<header><div class="logo">M</div><h1>MMH Extractor<small>Live tests + saari categories → JSON, kisi bhi device se</small></h1></header>
+<div class="steps"><div class="step on" id="s1">1 · Connect</div><div class="step" id="s2">2 · Tests chuno</div><div class="step" id="s3">3 · Download</div></div>
+
+<section class="card" id="p1">
+  <label>Worker URL (worker.js deploy karke milega)</label>
+  <input type="text" id="wk" placeholder="https://mmh-proxy.yourname.workers.dev">
+  <div class="grid2">
+    <div><label>Email</label><input type="email" id="em" autocomplete="username"></div>
+    <div><label>Password</label><input type="password" id="pw" autocomplete="current-password"></div>
+  </div>
+  <div class="row" style="margin-top:12px"><button class="p" id="login">Login &amp; Start</button><span class="mut">ya</span></div>
+  <label>Bearer token (Google login wale ke liye, 1 ghanta chalta hai)</label>
+  <input type="password" id="tk" placeholder="eyJhbGciOi...">
+  <div class="row" style="margin-top:10px"><button id="usetk">Token se Start</button></div>
+  <p class="mut" id="err" style="margin-top:10px"></p>
+</section>
+
+<section class="hide" id="p2">
+  <div class="card">
+    <div class="tabs" id="tabs"></div>
+    <div class="row" style="margin-bottom:10px"><input type="text" id="q" placeholder="Search test..." style="flex:1;min-width:150px">
+      <button id="all">Sab chuno</button><button id="none">Clear</button></div>
+    <div class="tests" id="tests"></div>
+  </div>
+  <div class="card row" style="position:sticky;bottom:8px;justify-content:space-between;z-index:5">
+    <b id="cnt">0 selected</b><button class="p" id="go" disabled>Extract karo</button>
+  </div>
+</section>
+
+<section class="hide" id="p3">
+  <div class="card"><div class="row" style="justify-content:space-between"><b id="pt">Extracting...</b><button id="stop">Stop</button></div>
+    <div class="bar" style="margin-top:10px"><i id="pb"></i></div><div id="log"></div></div>
+  <div class="card hide" id="res"><b>Files</b><div id="files"></div>
+    <div class="row" style="margin-top:12px"><button class="p" id="dall">Sab ek JSON me</button><button id="back">← Aur tests</button></div></div>
+</section>
+</div>
+<script>
+const $=s=>document.querySelector(s),sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const SITE='https://mockmatrixhub.in',DATA='https://data.mockmatrixhub.in/data/',API='https://api.mockmatrixhub.in/',AUTH='https://auth.mockmatrixhub.in';
+const ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR1cW1lanl5cHFna3JqbHBwbHJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MDIyNTAsImV4cCI6MjA4NzE3ODI1MH0.aAIITdr-BS-D-TJHY1fEkqgN4CRVwsyz90d2I9IrhVc';
+const S={cats:[],cur:null,tests:{},sel:new Map(),token:'',stop:false,cache:{},out:{}};
+const px=u=>$('#wk').value.trim().replace(/\/$/,'')+'/?u='+encodeURIComponent(u);
+try{$('#wk').value=localStorage.mmhw||''}catch(e){}
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function log(m,c=''){const l=$('#log');l.insertAdjacentHTML('beforeend','<div class="'+c+'">'+esc(m)+'</div>');l.scrollTop=1e9}
+function step(n){[1,2,3].forEach(i=>{$('#s'+i).className='step'+(i==n?' on':i<n?' done':'');$('#p'+i).classList.toggle('hide',i!=n)});if(n==3)$('#p3').classList.remove('hide')}
+async function rq(url,o={},tries=4){for(let a=0;a<tries;a++){if(S.stop)throw'stop';try{const r=await fetch(px(url),o);if([429,500,502,503,504].includes(r.status)){await sleep(1000*2**a);continue}return r}catch(e){await sleep(1000*2**a)}}throw new Error('network / worker URL check karo')}
+async function gj(u,bust){if(bust)u+=(u.includes('?')?'&':'?')+'t='+Date.now();const r=await rq(u);if(!r.ok)throw new Error(r.status+' '+u);return r.json()}
+const H=()=>({Authorization:'Bearer '+S.token,Accept:'application/json'});
+
+// ── IST live status ("DD-MM-YYYY HH:MM") ──
+function ist(s){const m=String(s||'').match(/^(\d\d)-(\d\d)-(\d{4})\s+(\d\d):(\d\d)$/);return m?Date.UTC(+m[3],m[2]-1,+m[1],+m[4],+m[5])-19800000:null}
+function status(l){const a=ist(l.liveFrom),b=ist(l.liveTo),n=Date.now();if(!a||!b)return'live';return n<a?'upcoming':n>b?'ended':'live'}
+function left(ms){ms=Math.max(0,ms);const d=ms/864e5|0,h=ms%864e5/36e5|0,m=ms%36e5/6e4|0;return d?d+'d '+h+'h':h?h+'h '+m+'m':m+'m'}
+function when(l){const a=ist(l.liveFrom),b=ist(l.liveTo),s=status(l);return s=='upcoming'?'Starts in '+left(a-Date.now()):s=='live'?'Ends in '+left(b-Date.now()):'Ended'}
+
+// ── login ──
+async function start(){
+  const w=$('#wk').value.trim();if(!/^https:\/\//.test(w))return $('#err').textContent='Pehle Worker URL daalo (neeche README wale steps).';
+  try{localStorage.mmhw=w}catch(e){}
+  $('#err').textContent='Catalog load ho raha hai...';
+  try{S.cats=await loadCats();$('#err').textContent='';renderTabs();step(2)}catch(e){$('#err').textContent='Error: '+(e.message||e)}
+}
+$('#login').onclick=async()=>{
+  const w=$('#wk').value.trim();if(!w)return $('#err').textContent='Worker URL daalo.';
+  $('#err').textContent='Login ho raha hai...';
+  try{const r=await rq(AUTH+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:ANON,'Content-Type':'application/json'},body:JSON.stringify({email:$('#em').value.trim(),password:$('#pw').value})});
+    const j=await r.json();if(!r.ok)throw new Error(j.error_description||j.msg||'Login fail — Google login ho to token wala option use karo');
+    S.token=j.access_token;S.rt=j.refresh_token;S.email=$('#em').value.trim();S.pw=$('#pw').value;start()}catch(e){$('#err').textContent=e.message||e}};
+$('#usetk').onclick=()=>{S.token=$('#tk').value.replace('Bearer','').trim();if(!S.token)return $('#err').textContent='Token paste karo.';start()};
+async function renew(){if(S.rt){const r=await rq(AUTH+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:ANON,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:S.rt})});if(r.ok){const j=await r.json();S.token=j.access_token;S.rt=j.refresh_token;return}}throw new Error('Token expire — dobara login karo')}
+
+// ── catalog ──
+async function loadCats(){
+  const cats=[{id:'live-test',title:'Live Tests',live:1,file:'live-test-data.json',base:DATA}];
+  const boards=(await gj(SITE+'/data/exams/boards.json',1)).boards;
+  for(const b of boards){if(b.comingSoon)continue;try{const f=await gj(SITE+'/data/exams/'+b.id+'.json',1);
+    for(const it of f.items||[]){if(it.comingSoon)continue;cats.push({id:it.id,title:it.title||it.id,board:b.title||b.id,file:(it.data||'').trim()||it.id+'-data.json',base:f.dataBase||DATA})}}catch(e){}}
+  return cats}
+const absU=(f,b)=>/^https?:/i.test(f)?f:(b||DATA)+f.replace(/^\//,'');
+const SKIP=new Set(['config','exams','years','yearFiles','files','_note']),HINT=['totalQs','total_qs','qs','type','time','marks','releaseDate','parts','linkStr','commonId','baseId','total_questions'];
+const tid=n=>['id','commonId','baseId'].map(k=>n[k]).find(v=>typeof v=='string'&&v.trim());
+function collect(n,path,out){if(Array.isArray(n))return n.forEach(v=>collect(v,path,out));if(!n||typeof n!='object')return;
+  const id=tid(n);if(id&&HINT.some(k=>k in n)){out.push([path,id.trim(),n]);return}
+  for(const[k,v]of Object.entries(n)){if(SKIP.has(k)||typeof v!='object'||!v)continue;collect(v,[...path,k],out)}}
+async function catTests(c){
+  const mu=absU(c.file,c.base),main=await gj(mu,1),pl=[main],seen=new Set([mu]);
+  const add=async f=>{const u=/^https?:/i.test(f)?f:new URL(f,mu).href;if(seen.has(u))return;seen.add(u);try{pl.push(await gj(u,1))}catch(e){}};
+  const yf=main.yearFiles&&typeof main.yearFiles=='object'?main.yearFiles:{},yrs=Array.isArray(main.years)?main.years.map(String):[],data=main.data&&typeof main.data=='object'?main.data:{};
+  for(const y of new Set([...Object.keys(yf),...yrs])){let f=yf[y];if(!f&&typeof data[y]=='string')f=data[y];if(!f&&!data[y]&&!main.exams)f=c.id+'-'+y+'.json';if(f)await add(f)}
+  if(main.files&&typeof main.files=='object')for(const ex of Object.values(main.files)){if(typeof ex=='string')await add(ex);else if(ex&&typeof ex=='object')for(const f of Object.values(ex))if(typeof f=='string')await add(f)}
+  for(const v of Object.values(data))if(typeof v=='string'&&v.endsWith('.json'))await add(v);
+  const found=[];for(const p of pl)collect(p.data&&typeof p.data=='object'&&Object.keys(p).length<=4?p.data:p,[],found);
+  const by={},out=[];for(const[path,id,n]of found){if(by[id])continue;const info={};for(const[k,v]of Object.entries(n))if(['string','number','boolean'].includes(typeof v))info[k]=v;out.push(by[id]={id,path,listing:info})}
+  return out}
+
+// ── UI ──
+function renderTabs(){
+  $('#tabs').innerHTML=S.cats.map(c=>`<button class="tab ${c.live?'lv':''} ${S.cur==c.id?'on':''}" data-c="${esc(c.id)}">${c.live?'● ':''}${esc(c.title)}</button>`).join('');
+  $('#tabs').querySelectorAll('.tab').forEach(b=>b.onclick=()=>openCat(b.dataset.c));
+  if(!S.cur)openCat('live-test')}
+async function openCat(id){
+  S.cur=id;const c=S.cats.find(x=>x.id==id);renderTabs();$('#tests').innerHTML='<span class="mut">Load ho raha hai...</span>';
+  if(!S.tests[id])try{S.tests[id]=await catTests(c)}catch(e){$('#tests').innerHTML='<span class="er">'+esc(e.message)+'</span>';return}
+  drawTests()}
+function drawTests(){
+  const c=S.cats.find(x=>x.id==S.cur),q=$('#q').value.toLowerCase(),list=(S.tests[S.cur]||[]).filter(t=>(t.id+' '+(t.listing.title||'')).toLowerCase().includes(q));
+  if(!list.length)return $('#tests').innerHTML='<span class="mut">Koi test nahi mila.</span>';
+  $('#tests').innerHTML=list.map(t=>{const l=t.listing,k=c.id+'|'+t.id,s=c.live?status(l):'';
+    return `<label class="t ${S.sel.has(k)?'sel':''}"><input type="checkbox" data-k="${esc(k)}" ${S.sel.has(k)?'checked':''}><div>
+      <b>${esc(l.title||t.id)}</b>${c.live?`<span class="chip ${s}">${s.toUpperCase()}</span><span>${esc(when(l))}</span><br><span>${esc(l.liveFrom||'')} → ${esc(l.liveTo||'')} IST</span>`:`<span>${esc(t.path.join(' › '))}</span>`}<br>
+      <span>${esc(l.qs||l.totalQs||'?')} Qs · ${esc(l.time||'')} ${l.type=='paid'?'· <b>PAID</b>':''}</span></div></label>`}).join('');
+  $('#tests').querySelectorAll('input').forEach(i=>i.onchange=()=>{const[cid,id]=i.dataset.k.split('|');
+    i.checked?S.sel.set(i.dataset.k,{cid,rec:S.tests[cid].find(t=>t.id==id)}):S.sel.delete(i.dataset.k);i.closest('.t').classList.toggle('sel',i.checked);cnt()});cnt()}
+function cnt(){$('#cnt').textContent=S.sel.size+' selected';$('#go').disabled=!S.sel.size}
+$('#q').oninput=drawTests;
+$('#all').onclick=()=>{(S.tests[S.cur]||[]).forEach(t=>S.sel.set(S.cur+'|'+t.id,{cid:S.cur,rec:t}));drawTests()};
+$('#none').onclick=()=>{S.sel.clear();drawTests()};
+
+// ── fetch + normalise (mmh_extract.py ka port) ──
+const lang=v=>v==null?{}:typeof v=='object'?Object.fromEntries(Object.entries(v).filter(([,x])=>typeof x=='string')):{en:String(v)};
+const num=x=>{const f=parseFloat(x);return isNaN(f)?x:f};
+const IMG=/<img[^>]+src\s*=\s*["']([^"']+)["']/gi;
+const imgs=(...vs)=>{const o=[];for(const v of vs)for(const t of(v&&typeof v=='object'?Object.values(v):[v]))if(typeof t=='string')for(const m of t.matchAll(IMG))if(!o.includes(m[1]))o.push(m[1]);return o};
+const man=v=>typeof v=='string'&&v.trim()?v.trim():null;
+async function apiGet(id,section){
+  for(let a=0;a<2;a++){const u=API+'?id='+encodeURIComponent(id)+(section?'&section='+section:'');const r=await rq(u,{headers:H()});if(r.status==401&&!a){await renew();continue}return r}}
+async function getTest(rec){
+  if(S.cache[rec.id])return S.cache[rec.id];
+  let r=await apiGet(rec.id);
+  if([400,422].includes(r.status)){const r2=await apiGet(rec.id,'PART-1');if(r2.status==200)r=r2}
+  if(r.status!=200)throw new Error('HTTP '+r.status+(r.status==402?' (premium locked)':r.status==404?' (content not ready)':''));
+  const raw=await r.json(),want=+(raw.meta||{}).total_questions||0,secs=raw.sections||{};
+  const count=()=>Object.values(secs).reduce((n,s)=>n+(Array.isArray(s)?s:s.questions||[]).length,0);
+  if(want&&count()<want&&raw.questions)for(let k=1;k<60;k++){const nm='PART-'+k;if(secs[nm])continue;const p=await apiGet(rec.id,nm);if(p.status!=200)break;const pj=await p.json();Object.assign(secs,pj.sections||{});Object.assign(raw.questions,pj.questions||{});if(count()>=want)break}
+  raw.sections=secs;return S.cache[rec.id]=build(raw,rec)}
+function build(raw,rec){
+  const meta=raw.meta||{},bank=raw.questions&&typeof raw.questions=='object'&&!Array.isArray(raw.questions)?raw.questions:null,src=raw.sections||{},ord=Array.isArray(meta.section_order)?meta.section_order:[];
+  const names=[...ord.filter(n=>n in src),...Object.keys(src).filter(n=>!ord.includes(n))],sections={},tm={};let seq=0;
+  for(const nm of names){const sv=src[nm],items=Array.isArray(sv)?sv:sv.questions||[],ts=Array.isArray(sv)?null:sv.time_seconds,qs=[];
+    for(const it of items){let b,lid,quid,c,n;
+      if(!Array.isArray(it)){b=it;lid=it.id;quid=it.quid;c=it.correct_score;n=it.negative_score}
+      else{[lid,quid]=it;b=bank&&bank[quid];[c,n]=it.length>=4?[it[2],it[3]]:[meta.correct_score,meta.negative_score];if(!b)continue}
+      seq++;const opts={},im={};
+      const qi=[man(b.question_image),...imgs(b.question)].filter(Boolean);if(qi.length)im.question=qi;
+      const oi={};
+      for(let k=1;k<=5;k++){const l=[man(b['option_image_'+k]),...imgs(b['option_'+k])].filter(Boolean);if(l.length)oi[k]=l;const t=lang(b['option_'+k]);if(Object.values(t).some(Boolean)||l.length)opts[k]=t}
+      if(Object.keys(oi).length)im.options=oi;
+      const si=[man(b.solution_image),...imgs(b.solution_text)].filter(Boolean);if(si.length)im.solution=si;
+      const q={no:seq,local_id:lid!=null?String(lid):null,quid,section:nm,topic:b.topic,question:lang(b.question),options:opts,answer:b.answer!=null?String(b.answer):null,solution:lang(b.solution_text),marks:{correct:num(c),negative:num(n)},has_image:!!Object.keys(im).length};
+      if(q.has_image)q.images=im;if(man(b.solution_video))q.solution_video=b.solution_video;qs.push(q)}
+    sections[nm]={time_seconds:ts??null,time_minutes:typeof ts=='number'?+(ts/60).toFixed(2):null,question_count:qs.length,questions:qs};tm[nm]=ts??null}
+  let full=meta.timer_seconds;if(full==null&&meta.timer_minutes)full=Math.round(parseFloat(meta.timer_minutes)*60);
+  return{id:rec.id,title:meta.title||rec.listing.title,catalog:{path:rec.path,listing:rec.listing},timing:{full_mock_seconds:full??null,full_mock_minutes:meta.timer_minutes||(full?+(full/60).toFixed(2):null),sectional_seconds:tm},marking:{correct:num(meta.correct_score),negative:num(meta.negative_score)},qualifying_sections:meta.qualifying_sections||[],total_questions:Object.values(sections).reduce((n,s)=>n+s.question_count,0),meta,sections}}
+
+// ── run ──
+$('#go').onclick=async()=>{
+  S.stop=false;S.out={};$('#log').innerHTML='';$('#res').classList.add('hide');step(3);$('#pt').textContent='Extracting...';
+  const by={};for(const{cid,rec}of S.sel.values())(by[cid]=by[cid]||[]).push(rec);
+  const total=S.sel.size;let n=0;
+  for(const[cid,recs]of Object.entries(by)){const c=S.cats.find(x=>x.id==cid),done=[],skipped=[];
+    log('▶ '+c.title+' ('+recs.length+' tests)');
+    for(const rec of recs){if(S.stop)break;
+      try{const t=await getTest(rec);done.push(t);log('✓ '+rec.id+'  '+t.total_questions+'q','ok')}catch(e){if(e==='stop')break;skipped.push({id:rec.id,reason:String(e.message||e)});log('✗ '+rec.id+'  '+(e.message||e),'er')}
+      $('#pb').style.width=(++n/total*100)+'%';await sleep(250)}
+    if(done.length||skipped.length)S.out[cid]={category:{id:c.id,title:c.title,board:c.board||'live'},extracted_at:new Date().toISOString(),stats:{tests_listed:recs.length,tests_extracted:done.length,tests_skipped:skipped.length,questions:done.reduce((a,t)=>a+t.total_questions,0)},skipped_tests:skipped,tests:done}}
+  $('#pt').textContent=S.stop?'Roka gaya':'Ho gaya ✓';finish()};
+$('#stop').onclick=()=>{S.stop=true};
+function dl(name,obj){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(obj,null,1)],{type:'application/json'}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
+function finish(){const e=Object.entries(S.out);$('#res').classList.remove('hide');
+  $('#files').innerHTML=e.map(([id,d])=>`<div class="f"><div><b>${esc(id)}.json</b><br><span class="mut">${d.stats.tests_extracted} tests · ${d.stats.questions} Qs${d.stats.tests_skipped?' · '+d.stats.tests_skipped+' skipped':''}</span></div><button data-id="${esc(id)}">⬇ Download</button></div>`).join('')||'<p class="mut">Kuch extract nahi hua.</p>';
+  $('#files').querySelectorAll('button').forEach(b=>b.onclick=()=>dl(b.dataset.id+'.json',S.out[b.dataset.id]));$('#dall').disabled=!e.length}
+$('#dall').onclick=()=>dl('mmh_extract_'+new Date().toISOString().slice(0,10)+'.json',S.out);
+$('#back').onclick=()=>{step(2);drawTests()};
+setInterval(()=>{if(S.cur==='live-test'&&!$('#p2').classList.contains('hide')&&document.activeElement.id!=='q')drawTests()},60000);
+</script></body></html>
